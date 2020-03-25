@@ -39,7 +39,7 @@ class CPU:
             filename = sys.argv[1]
         except:
             print('Please add an ls8 file path')
-
+        print(filename)
         with open(filename) as f:
             for line in f:
                 comment_split = line.split("#")
@@ -50,7 +50,7 @@ class CPU:
 
                 # convert our binary string to a number
                 x = int(num, 2)
-                self.instruction_register[address] = x
+                self.ram_write(address, x)
                 address += 1
 
 
@@ -71,11 +71,9 @@ class CPU:
             return "LDI"
         elif identifier == 0b01000111:
             return "PRN"
-        elif identifier == 0b0000:
+        elif identifier == 0b10100000:
             return "ADD"
-        elif identifier == 0b0001:
-            return "SUB"
-        elif identifier == 0b0010:
+        elif identifier == 0b10100010:
             return "MUL"
         return None
 
@@ -102,35 +100,47 @@ class CPU:
     
     def run(self):
         """Run the CPU."""
+        inc_size=0;
         while not self.halt:
             instruction = self.ram_read(self.program_counter)
             # self.instruction_register[self.program_counter] = instruction
             # get operation name
             operation = self.operation(instruction)
-
+            instruct_a = self.ram_read(self.program_counter + 1)
+            instruct_b = self.ram_read(self.program_counter + 2)
+            
             if operation == 'HLT':
                 self.HLT()
 
             # if operation is LDI
             if operation == 'LDI':
                 # get the two arguments, registry and value
-                instruct_a = self.ram_read(self.program_counter + 1)
-                instruct_b = self.ram_read(self.program_counter + 2)
-                self.LDI(instruct_a, instruct_b)
+                self.reg[instruct_a] = instruct_b
+                inc_size = 3
 
             # if operation is PRN
             if operation == 'PRN':
-                instruct_a = self.ram_read(self.program_counter + 1)
-                self.PRN(instruct_a)
+                reg_index = instruct_a
+                num = self.reg[reg_index]
+                print(num)
+                inc_size = 2
+            
+            if operation == 'ADD':
+                self.alu("ADD", instruct_a, instruct_b)
+                inc_size = 3
 
-            self.program_counter += 1
+            if operation == 'MUL':
+                self.alu("MUL", instruct_a, instruct_b)
+                inc_size = 3
+
+            self.program_counter += inc_size
             
     def ram_write(self, address, value):
         self.ram[address] = value
         return self.ram[address]
     
     def ram_read(self, address):
-        return self.instruction_register[address]
+        return self.ram[address]
 
     def LDI(self, register, value):
         self.instruction_register[int(register)] = value

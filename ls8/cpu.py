@@ -2,6 +2,7 @@
 
 import sys
 
+MUL = 0b10100010
 class CPU:
     """Main CPU class."""
 
@@ -34,7 +35,12 @@ class CPU:
         #     0b00000001, # HLT
         # ]
         program = []
-        with open("examples/print8.ls8") as f:
+        try:
+            filename = sys.argv[1]
+        except:
+            print('Please add an ls8 file path')
+
+        with open(filename) as f:
             for line in f:
                 comment_split = line.split("#")
                 # extract our number
@@ -44,8 +50,6 @@ class CPU:
 
                 # convert our binary string to a number
                 x = int(num, 2)
-                # # print the x in bin and dec
-                # print(f"{x:08b}: {x:d}")
                 self.instruction_register[address] = x
                 address += 1
 
@@ -57,59 +61,22 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
-        elif op == "DIV":
-            self.reg[reg_a] /= self.reg[reg_b]
-        elif op == "MOD":
-            return self.reg[reg_a] % self.reg[reg_b]
-        elif op == "CMP":
-            return self.reg[reg_a] == self.reg[reg_b]
-        elif op == "AND":
-            return self.reg[reg_a] and self.reg[reg_b]
-        elif op == "NOT":
-            return self.reg[reg_a] != self.reg[reg_b]
-        elif op == "OR":
-            return self.reg[reg_a] or self.reg[reg_b]
-        elif op == "XOR":
-            return self.reg[reg_a] or self.reg[reg_b] and (not self.reg[reg_a] or not self.reg[reg_b]) 
         else:
             raise Exception("Unsupported ALU operation")
 
     def operation(self, identifier):
-        alu_identifier = identifier
         if identifier == 0b00000001:
             return "HLT"
         elif identifier == 0b10000010:
             return "LDI"
         elif identifier == 0b01000111:
             return "PRN"
-        elif alu_identifier == 0b0000:
+        elif identifier == 0b0000:
             return "ADD"
-        elif alu_identifier == 0b0001:
+        elif identifier == 0b0001:
             return "SUB"
-        elif alu_identifier == 0b0010:
+        elif identifier == 0b0010:
             return "MUL"
-        elif alu_identifier == 0b0011:
-            return "DIV"
-        elif alu_identifier == 0b0100:
-            return "MOD"
-        elif alu_identifier == 0b0101:
-            return "INC"
-        elif alu_identifier == 0b0110:
-            return "DEC"
-        elif alu_identifier == 0b0111:
-            return "CMP"
-        elif alu_identifier == 0b1000:
-            return "AND"
-        elif alu_identifier == 0b1001:
-            return "NOT"
-        elif alu_identifier == 0b1010:
-            return "OR"
-        elif alu_identifier == 0b1011:
-            return "XOR"
-        elif alu_identifier == 0b1100:
-            return "SHL"
-        elif alu_identifier == 0b1101:
-            return "SHR"
         return None
 
     def trace(self):
@@ -144,18 +111,6 @@ class CPU:
             if operation == 'HLT':
                 self.HLT()
 
-            # parse instruction
-            instruct = "{0:8b}".format(instruction)
-            operands = int(instruct[:2].strip() or '0', 2)
-            alu = int(instruct[2].strip() or '0', 2)
-            setPC = int(instruct[3].strip() or '0', 2)
-            
-            # if it is an ALU operation
-            if alu == 0b1:
-                instruct_a = self.ram_read(self.program_counter + 1)
-                instruct_b = self.ram_read(self.program_counter + 2)
-                self.alu(operation, instruct_a, instruct_b)
-
             # if operation is LDI
             if operation == 'LDI':
                 # get the two arguments, registry and value
@@ -168,11 +123,7 @@ class CPU:
                 instruct_a = self.ram_read(self.program_counter + 1)
                 self.PRN(instruct_a)
 
-            if setPC != 0b1:
-                # pc moves to next instruction
-                self.program_counter += int(operands)
-            else:
-                self.program_counter += 1
+            self.program_counter += 1
             
     def ram_write(self, address, value):
         self.ram[address] = value

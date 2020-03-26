@@ -28,6 +28,7 @@ then prints it out:
 00000001 # HLT
 ```
 
+
 The binary numeric value on the left in the `print8.ls8` code above is either:
 
 * the machine code value of the instruction (e.g. `10000010` for `LDI`), also

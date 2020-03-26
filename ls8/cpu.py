@@ -3,7 +3,7 @@
 import sys
 
 MUL = 0b10100010
-SP = 3
+SP = 7
 class CPU:
     """Main CPU class."""
 
@@ -18,7 +18,7 @@ class CPU:
         # register
         self.reg = dict()
         self.halt = False
-        self.reg[SP] = []
+        self.reg[SP] = 0xf4
 
     def load(self):
         """Load a program into memory."""
@@ -109,11 +109,13 @@ class CPU:
         inc_size=0;
         while not self.halt:
             instruction = self.ram_read(self.program_counter)
+            
             # self.instruction_register[self.program_counter] = instruction
             # get operation name
             operation = self.operation(instruction)
             instruct_a = self.ram_read(self.program_counter + 1)
             instruct_b = self.ram_read(self.program_counter + 2)
+            # print(operation)
             
             if operation == 'HLT':
                 self.HLT()
@@ -127,7 +129,7 @@ class CPU:
             # if operation is PRN
             if operation == 'PRN':
                 reg_index = instruct_a
-                num = self.reg[reg_index]
+                num = self.ram_read(reg_index)
                 print(num)
                 inc_size = 2
             

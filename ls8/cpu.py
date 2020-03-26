@@ -2,7 +2,6 @@
 
 import sys
 
-MUL = 0b10100010
 SP = 7
 class CPU:
     """Main CPU class."""
@@ -12,13 +11,12 @@ class CPU:
         self.program_counter = 0
 
         # instruction register records running instructions
-        self.instruction_register = [0]*16
         # ram
         self.ram = [0]*256
         # register
-        self.reg = dict()
+        self.reg = [0] * 8
         self.halt = False
-        self.reg[SP] = 0xf4
+        self.reg[SP] = 0XF4
 
     def load(self):
         """Load a program into memory."""
@@ -44,16 +42,19 @@ class CPU:
         print(filename)
         with open(filename) as f:
             for line in f:
-                comment_split = line.split("#")
-                # extract our number
-                num = comment_split[0].strip() # trim whitespace
-                if num == '':
-                    continue # ignore blank lines
+                line = line.split('#')[0]
+                line = line.strip()
 
-                # convert our binary string to a number
-                x = int(num, 2)
-                self.ram_write(address, x)
-                address += 1
+                if line == '':
+                    continue
+
+                # val = int(line)
+                # print(line)
+                program.append(int(line, 2))
+
+        for instruction in program:
+            self.ram[address] = instruction
+            address += 1
 
 
     def alu(self, op, reg_a, reg_b):
@@ -81,6 +82,10 @@ class CPU:
             return "PUSH"
         elif identifier == 0b01000110:
             return "POP"
+        elif identifier == 0b01010000:
+            return "CALL"
+        elif identifier == 0b00010001:
+            return "RET"
         return None
 
     def trace(self):
@@ -106,12 +111,11 @@ class CPU:
     
     def run(self):
         """Run the CPU."""
-        inc_size=0;
+        
         while not self.halt:
+            inc_size=0;
             instruction = self.ram_read(self.program_counter)
-            
-            # self.instruction_register[self.program_counter] = instruction
-            # get operation name
+            # get operation name and values
             operation = self.operation(instruction)
             instruct_a = self.ram_read(self.program_counter + 1)
             instruct_b = self.ram_read(self.program_counter + 2)
@@ -129,7 +133,7 @@ class CPU:
             # if operation is PRN
             if operation == 'PRN':
                 reg_index = instruct_a
-                num = self.ram_read(reg_index)
+                num = self.reg[reg_index]
                 print(num)
                 inc_size = 2
             
@@ -145,16 +149,26 @@ class CPU:
                 value = self.reg[instruct_a]
                 # PUSH
                 self.reg[SP] -= 1
-                self.ram_write(value, self.reg[SP])
+                self.ram_write(self.reg[SP], value)
                 inc_size = 2
+                self.op_pc = False
 
             if operation == 'POP':
-                value = self.ram[self.reg[SP]]
+                value = self.ram_read(self.reg[SP])
                 # POP
-                self.reg[instruct_a] = value
                 self.reg[SP] += 1
+                self.reg[instruct_a] = value
                 inc_size = 2
 
+            if operation == 'CALL':
+                self.reg[SP] -= 1
+                self.ram_write(self.reg[SP], self.program_counter + 2)
+                self.program_counter = self.reg[instruct_a]
+
+            if operation == 'RET':
+                self.program_counter = self.ram_read(self.reg[SP])
+                self.reg[SP] += 1
+            
             self.program_counter += inc_size
             
     def ram_write(self, address, value):
@@ -165,11 +179,11 @@ class CPU:
         return self.ram[address]
 
     def LDI(self, register, value):
-        self.instruction_register[int(register)] = value
+        self.reg[int(register)] = value
         self.program_counter += 1
-        return self.instruction_register[int(register)]
+        return self.reg[int(register)]
 
     def PRN(self, register):
-        print(int(self.instruction_register[int(register)]))
+        print(int(self.reg[int(register)]))
         self.program_counter += 1
         return True

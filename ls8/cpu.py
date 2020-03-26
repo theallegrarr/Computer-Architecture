@@ -3,6 +3,7 @@
 import sys
 
 MUL = 0b10100010
+SP = 3
 class CPU:
     """Main CPU class."""
 
@@ -17,6 +18,7 @@ class CPU:
         # register
         self.reg = dict()
         self.halt = False
+        self.reg[SP] = []
 
     def load(self):
         """Load a program into memory."""
@@ -58,7 +60,7 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "SUB":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.reg[reg_a] -= self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
         else:
@@ -75,6 +77,10 @@ class CPU:
             return "ADD"
         elif identifier == 0b10100010:
             return "MUL"
+        elif identifier == 0b01000101:
+            return "PUSH"
+        elif identifier == 0b01000110:
+            return "POP"
         return None
 
     def trace(self):
@@ -132,6 +138,20 @@ class CPU:
             if operation == 'MUL':
                 self.alu("MUL", instruct_a, instruct_b)
                 inc_size = 3
+
+            if operation == 'PUSH':
+                value = self.reg[instruct_a]
+                # PUSH
+                self.reg[SP] -= 1
+                self.ram_write(value, self.reg[SP])
+                inc_size = 2
+
+            if operation == 'POP':
+                value = self.ram[self.reg[SP]]
+                # POP
+                self.reg[instruct_a] = value
+                self.reg[SP] += 1
+                inc_size = 2
 
             self.program_counter += inc_size
             
